@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 
 setup(name='useftdi',
-      version='0.5.15',
+      version='0.6.15',
       description="""
                   A library of software drivers to interface with various
-                  Picor IC's utilizing FTDI I2C dongles.
+                  I2C IC's utilizing FTDI I2C dongles.
                   Requires Python 3.6.xx or later.
                   """,
       url=r'https://github.com/TedKus/useftdi',

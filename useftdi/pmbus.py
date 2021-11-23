@@ -859,6 +859,28 @@ class PMBus(Use_Ftdi):
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
+    def get_alert_response_address(self, **kwargs) -> int:
+        """get_alert_response_address()
+        A slave-only device can signal the host through SMBALERT# that it
+        wants to talk. The host processes the interrupt and simultaneously
+        accesses all SMBALERT# devices through the Alert Response Address.
+        Only the device(s) which pulled SMBALERT# low will acknowledge the
+        Alert Response Address. The host performs a modified Receive Byte
+        operation. The 7 bit device address provided by the slave transmit
+        device is placed in the 7 most significant bits of the byte.
+        The eighth bit can be a zero or one.
+
+        Returns:
+            int: highest priority (lowest address) device address which has
+            SMBAlert# data to transfer.
+            If no devices need to be polled the address return is zero.
+        """
+        relax = kwargs.get('relax', True)
+        start = kwargs.get('start', True)
+        response = self.ara_query(relax=relax, start=start)
+        response = int.from_bytes(response, byteorder='little', signed=False)
+        return response
+
     def get_smbalert_mask(self, status_x, **kwargs) -> int:
         if isinstance(status_x, str):
             if status_x == 'STATUS_BYTE':

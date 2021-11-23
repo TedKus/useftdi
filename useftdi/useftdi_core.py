@@ -111,6 +111,11 @@ class Use_Ftdi():
         self.gpio_pins = self.gpio().all_pins & ((1 << self.gpio_width) - 1)
         self.gpio_master_mask = self.i2c_master._gpio_mask
 
+        self.ara_command = self.i2c_master.get_port(0x0C)  # this is a special
+        # ara_command is the Alert Response Address
+        self.general_call = self.i2c_master.get_port(0x00)  # this is a special
+        # general_call is the General Call Address, used for bus reset
+
         return None
 
     def __del__(self, **kwargs) -> None:
@@ -417,8 +422,52 @@ class Use_Ftdi():
             None
         """
 
-        self.i2c_master.write(0x00, 0x06)
+        # self.i2c_master.write(0x00, 0x06)
+        try:
+            self.general_call.write(0x06)
+        except I2cNackError:
+            print('NACK from Bus on General Call (0x00), SDA stuck high?')
+
         return None
+
+    def ara_query(self, **kwargs) -> bytearray:
+        """
+        ara_query()
+
+        A slave-only device can signal the host through SMBALERT# that it
+        wants to talk. The host processes the interrupt and simultaneously
+        accesses all SMBALERT# devices through the Alert Response Address.
+        Only the device(s) which pulled SMBALERT# low will acknowledge the
+        Alert Response Address. The host performs a modified Receive Byte
+        operation. The 7 bit device address provided by the slave transmit
+        device is placed in the 7 most significant bits of the byte.
+        The eighth bit can be a zero or one.
+
+        Returns:
+            byte (bytearray): highest priority (lowest address) device
+            address which has SMBAlert# data to transfer.
+        """
+        start = kwargs.get('start', True)
+        relax = kwargs.get('relax', False)
+
+        try:
+            response = self.ara_command.read(1, start=start, relax=relax)
+        # the dongle timed out, which can be for a lot of reasons
+        except I2cNackError:
+            return b'\x00'  # return address 0
+        except I2cIOError:
+            if kwargs.get('verbose', False):
+                print('I2cIOError, FTDI controller was not initialized, '
+                      'fixing...')
+            self.i2c_master.flush()  # flush HW FIFOs
+
+            # Option to try again after failure
+            if kwargs.get('retry_on_error', True):
+                kwargs['retry_on_error'] = False
+                response = self.ara_query(**kwargs)
+            else:
+                raise I2cIOError
+        return response
 
     def gpio(self):
         """

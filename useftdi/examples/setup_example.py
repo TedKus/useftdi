@@ -23,4 +23,3 @@ ftdi_options = {'frequency': int(400000), 'clockstretching': True,
 
 i2c, gpio = init_ftdi(ftdi_options)
 device, i2c_devices = find_device(i2c, PMBus, device=None)
-
