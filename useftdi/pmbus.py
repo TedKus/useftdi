@@ -63,8 +63,8 @@ class PMBus(Use_Ftdi):
             tuple(int, int, int): response, retry, delay
             if these values are not passed in, they may return None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         dowrite = False
         assembly = 0
@@ -79,10 +79,10 @@ class PMBus(Use_Ftdi):
             assembly = assembly | (delay & 0x07)
 
         if dowrite:
-            self.write_slave([cmd, int(assembly)], relax=relax, start=start)
+            self.write_slave([cmd, int(assembly)], **kwargs)
 
         if doRead or not dowrite:
-            message = self.query_slave([cmd], 1, relax=relax, start=start)
+            message = self.query_slave([cmd], 1, **kwargs)
             message = int.from_bytes(message, byteorder='little', signed=False)
             response = (message & (0x03 << 6)) >> 6
             retry = (message & (0x07 << 3)) >> 3
@@ -102,9 +102,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: pmbus return int, signed or unsigned as indicated
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
-        response = self.query_slave([cmd], 2, relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.query_slave([cmd], 2, **kwargs)
         response = int.from_bytes(response, byteorder=byteorder, signed=signed)
         return response
 
@@ -121,11 +121,11 @@ class PMBus(Use_Ftdi):
         Returns:
             [None]:
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+
         sendbytes = item.to_bytes(2, byteorder=byteorder, signed=signed)
-        self.write_slave([cmd, *sendbytes],
-                         relax=relax, start=start)
+        self.write_slave([cmd, *sendbytes], **kwargs)
         return None
 
     # static variables in the controller
@@ -144,10 +144,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: page set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
-        response = self.query_slave([self.commands.operation], 1,
-                                    relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.query_slave([self.commands.operation], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -163,10 +162,9 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.page, page],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.page, page], **kwargs)
         return None
 
     @property
@@ -216,10 +214,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: operation set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
-        response = self.query_slave([self.commands.operation], 1,
-                                    relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.query_slave([self.commands.operation], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -236,10 +233,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: operation set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.operation, operation],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.operation, operation], **kwargs)
         return None
 
     @property
@@ -282,10 +278,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: on_off_config set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
-        response = self.query_slave([self.commands.operation], 1,
-                                    relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.query_slave([self.commands.operation], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -301,10 +296,10 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         self.write_slave([self.commands.on_off_config, on_off_config],
-                         relax=relax, start=start)
+                         **kwargs)
         return None
 
     @property
@@ -329,10 +324,9 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.clear_faults],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.clear_faults], **kwargs)
 
         return None
 
@@ -349,14 +343,13 @@ class PMBus(Use_Ftdi):
         Returns:
             int: phase set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         if phase:
             response = self.query_slave([self.commands.phase, int(phase)], 1,
-                                        relax=relax, start=start)
+                                        **kwargs)
         else:
-            response = self.query_slave([self.commands.phase], 1,
-                                        relax=relax, start=start)
+            response = self.query_slave([self.commands.phase], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -382,8 +375,8 @@ class PMBus(Use_Ftdi):
         *data is a generator
 
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         message = bytearray()
         data_length = int((data.bit_length() + 7) // 8)
@@ -397,7 +390,7 @@ class PMBus(Use_Ftdi):
             pecbyte = self.get_crc(message)
             message.append(pecbyte)
 
-        self.write_slave(*message, relax=relax, start=start)
+        self.write_slave(*message, **kwargs)
 
         return None
 
@@ -426,8 +419,8 @@ class PMBus(Use_Ftdi):
         *data is a generator
 
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         data = bytearray()
         data.append(self.commands.page_plus_read)
@@ -437,8 +430,7 @@ class PMBus(Use_Ftdi):
 
         i = 0
         while i < retry_count:
-            response = self.query_slave(*data, read_len,
-                                        relax=relax, start=start)
+            response = self.query_slave(*data, read_len, **kwargs)
             if pec:
                 # we want to know the pec from what we sent and received
                 # matches the pec byte received
@@ -510,10 +502,10 @@ class PMBus(Use_Ftdi):
             zone_write set in slave, unsigned, 1 byte
             zone_read set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         self.write_slave([self.commands.zone_config, int(zone_write),
-                          int(zone_read)], relax=relax, start=start)
+                          int(zone_read)], **kwargs)
 
         return (zone_write, zone_read)
 
@@ -555,19 +547,20 @@ class PMBus(Use_Ftdi):
             zone_active_write (int): set in slave, unsigned, 1 byte
             zone_active_read (int): set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         if zone_active_write == 0xFE and zone_active_read == 0xFE:
             response = self.query_slave([self.commands.zone_active], 2,
-                                        relax=relax, start=start)
+                                        **kwargs)
             zone_active_write = response[0]
             zone_active_read = response[1]
 
         else:
+            kwargs['relax'] = True  # special case
             self.write_slave([self.commands.zone_active,
                               int(zone_active_write),
                               int(zone_active_read)],
-                             relax=True, start=start)
+                             **kwargs)
 
         return (zone_active_write, zone_active_read)
 
@@ -604,10 +597,10 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         self.write_slave([self.commands.write_protect, int(write_protect)],
-                         relax=relax, start=start)
+                         **kwargs)
 
         return None
 
@@ -630,11 +623,11 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         self.write_slave([self.commands.store_default_all],
-                         relax=relax, start=start)
+                         **kwargs)
 
         return None
 
@@ -659,11 +652,10 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
-        self.write_slave([self.commands.restore_default_all],
-                         relax=relax, start=start)
+        self.write_slave([self.commands.restore_default_all], **kwargs)
 
         return None
 
@@ -683,12 +675,11 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         self.write_slave([self.commands.store_default_code,
-                          int(command_code)],
-                         relax=relax, start=start)
+                          int(command_code)], **kwargs)
 
         return None
 
@@ -711,12 +702,11 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         self.write_slave([self.commands.store_default_code,
-                          int(command_code)],
-                         relax=relax, start=start)
+                          int(command_code)], **kwargs)
 
         return None
 
@@ -738,11 +728,10 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
-        self.write_slave([self.commands.store_user_all],
-                         relax=relax, start=start)
+        self.write_slave([self.commands.store_user_all], **kwargs)
 
         return None
 
@@ -764,11 +753,10 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
-        self.write_slave([self.commands.restore_user_all],
-                         relax=relax, start=start)
+        self.write_slave([self.commands.restore_user_all], **kwargs)
 
         return None
 
@@ -784,12 +772,11 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         self.write_slave([self.commands.store_user_code,
-                          int(command_code)],
-                         relax=relax, start=start)
+                          int(command_code)], **kwargs)
 
         return None
 
@@ -805,12 +792,11 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
 
         self.write_slave([self.commands.restore_user_code,
-                          int(command_code)],
-                         relax=relax, start=start)
+                          int(command_code)], **kwargs)
 
         return None
 
@@ -830,11 +816,10 @@ class PMBus(Use_Ftdi):
         Returns:
             int: capability set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
-        response = self.query_slave([self.commands.capability], 1,
-                                    relax=relax, start=start)
+        response = self.query_slave([self.commands.capability], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -852,10 +837,10 @@ class PMBus(Use_Ftdi):
         Returns:
             int: command_code support description
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.query, command_code], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -875,9 +860,9 @@ class PMBus(Use_Ftdi):
             SMBAlert# data to transfer.
             If no devices need to be polled the address return is zero.
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        response = self.ara_query(relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.ara_query(**kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -910,10 +895,10 @@ class PMBus(Use_Ftdi):
         elif isinstance(status_x, int):
             x = status_x
 
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         mask = self.query_slave([self.commands.smbalert_mask, int(1), x], 2,
-                                relax=relax, start=start)
+                                **kwargs)
         # this is block read, first byte back is the read block count
         return mask[1]
 
@@ -946,10 +931,10 @@ class PMBus(Use_Ftdi):
         elif isinstance(status_x, int):
             x = status_x
 
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         mask = self.write_slave([self.commands.smbalert_mask, x, mask],
-                                relax=relax, start=start)
+                                **kwargs)
         # this is block read, first byte back is the read block count
         return None
 
@@ -972,17 +957,17 @@ class PMBus(Use_Ftdi):
         Returns:
             int: mask set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         if 'mask' in kwargs:
             smbalert_mask = kwargs['mask']
             del kwargs['mask']
+            kwargs['relax'] = True  # special case
             self.write_slave([self.commands.smbalert_mask, int(status_x),
-                              int(smbalert_mask)], relax=True, start=start)
+                              int(smbalert_mask)], **kwargs)
         else:
             mask = self.query_slave([self.commands.smbalert_mask, int(1),
-                                     int(status_x)], 2,
-                                    relax=relax, start=start)
+                                     int(status_x)], 2, **kwargs)
             # this is block read, first byte back is the read block count
         return mask[1]
 
@@ -1000,10 +985,9 @@ class PMBus(Use_Ftdi):
         Returns:
             int: mode set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
-        response = self.query_slave([self.commands.vout_mode], 1,
-                                    relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
+        response = self.query_slave([self.commands.vout_mode], 1, **kwargs)
         mode = int.from_bytes(response, byteorder='little', signed=False)
         return mode
 
@@ -1021,10 +1005,9 @@ class PMBus(Use_Ftdi):
         Returns:
             None
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.vout_mode, int(mode)],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.vout_mode, int(mode)], **kwargs)
         return
 
     @property
@@ -1492,14 +1475,14 @@ class PMBus(Use_Ftdi):
             b int: b coefficient set in slave, signed, 2 byte
             R int: R coefficient set in slave, signed, 2 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         coeff = 0x00
         if direction == 'decode':
             coeff = 0x01
         response = self.query_slave([self.commands.coefficients, int(0x02),
                                      int(command_code), int(coeff)], 6,
-                                    relax=relax, start=start)
+                                    **kwargs)
         # need to add PEC support eventually, that would make read bytes 7
         m = int.from_bytes(response[0:2], byteorder='little', signed=True)
         b = int.from_bytes(response[2:4], byteorder='little', signed=True)
@@ -1730,8 +1713,8 @@ class PMBus(Use_Ftdi):
             iorder (int): The interleave order for this particular unit (4
             bits), 1 byte, unsigned
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         dowrite = False
         group_id = 0x00
         gnum = 0x00
@@ -1755,11 +1738,11 @@ class PMBus(Use_Ftdi):
             interleavebytes = assembly.to_bytes(2, byteorder='little',
                                                 signed=False)
             self.write_slave([self.commands.interleave, interleavebytes],
-                             relax=relax, start=start)
+                             **kwargs)
             return None
         else:
             response = self.query_slave([self.commands.interleave], 2,
-                                        relax=relax, start=start)
+                                        **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         group_id = (response & 0x0F00) >> 8
         gnum = (response & 0x00F0) >> 4
@@ -1857,8 +1840,8 @@ class PMBus(Use_Ftdi):
             fan2_tach (int): fan1_tach ppr, 1 byte, unsigned
 
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         dowrite = False
         fan1 = True
         fan2 = True
@@ -1896,11 +1879,11 @@ class PMBus(Use_Ftdi):
                         ((fan1_tach & 0x03) << 4) | ((fan2 & 0x01) << 3) |
                         ((fan2_mode & 0x01) << 2) | (fan2_tach & 0x03))
             self.write_slave([self.commands.fan_config_1_2, int(assembly)],
-                             relax=relax, start=start)
+                             **kwargs)
             return None
         else:
             response = self.query_slave([self.commands.fan_config_1_2], 1,
-                                        relax=relax, start=start)
+                                        **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         fan1 = (response & (0x01 << 7)) >> 7
         fan1_mode = (response & (0x01 << 6)) >> 6
@@ -1939,8 +1922,8 @@ class PMBus(Use_Ftdi):
             fan4_tach (int): fan3_tach ppr, 1 byte, unsigned
 
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         dowrite = False
         fan3 = True
         fan4 = True
@@ -1978,11 +1961,11 @@ class PMBus(Use_Ftdi):
                         ((fan3_tach & 0x03) << 4) | ((fan4 & 0x01) << 3) |
                         ((fan4_mode & 0x01) << 2) | (fan4_tach & 0x03))
             self.write_slave([self.commands.fan_config_3_4, int(assembly)],
-                             relax=relax, start=start)
+                             **kwargs)
             return None
         else:
             response = self.query_slave([self.commands.fan_config_3_4], 1,
-                                        relax=relax, start=start)
+                                        **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         fan3 = (response & (0x01 << 7)) >> 7
         fan3_mode = (response & (0x01 << 6)) >> 6
@@ -3573,11 +3556,10 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_byte set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
-        response = self.query_slave([self.commands.status_byte], 1,
-                                    relax=relax, start=start)
+        response = self.query_slave([self.commands.status_byte], 1, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3621,18 +3603,16 @@ class PMBus(Use_Ftdi):
         Returns:
             None:
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         if busy:
-            self.write_slave([self.commands.status_byte, 0x80],
-                             relax=relax, start=start)
+            self.write_slave([self.commands.status_byte, 0x80], **kwargs)
         return None
 
     def clear_status_byte(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_word, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_word, status], **kwargs)
         return None
 
     def status_word(self, **kwargs) -> int:
@@ -3647,11 +3627,10 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_word set in slave, unsigned, 2 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
-        response = self.query_slave([self.commands.status_word], 2,
-                                    relax=relax, start=start)
+        response = self.query_slave([self.commands.status_word], 2, **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -3715,23 +3694,21 @@ class PMBus(Use_Ftdi):
         Returns:
             None:
         """
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         if busy:
             byte = 0x80
         if unknown:
             word = 0x01
         if busy or unknown:
-            self.write_slave([self.commands.status_byte, byte, word],
-                             relax=relax, start=start)
+            self.write_slave([self.commands.status_byte, byte, word], **kwargs)
         return None
 
     def clear_status_word(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
         payload = status.to_bytes(2, byteorder='little', signed=False)
-        self.write_slave([self.commands.status_word, *payload],
-                         relax=relax, start=start)
+        self.write_slave([self.commands.status_word, *payload], **kwargs)
         return None
 
     def status_vout(self, **kwargs) -> int:
@@ -3746,11 +3723,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_vout set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_vout], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3777,10 +3754,9 @@ class PMBus(Use_Ftdi):
                b3_vout_max_min_w, b2_ton_max_f, b1_toff_max_w, b0_vout_trk)
 
     def clear_status_vout(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_vout, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_vout, status], **kwargs)
         return None
 
     def status_iout(self, **kwargs) -> int:
@@ -3795,11 +3771,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_iout set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_iout], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3827,10 +3803,9 @@ class PMBus(Use_Ftdi):
                b3_csf, b2_in_plmode, b1_pout_opf, b0_pout_opw)
 
     def clear_status_iout(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_iout, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_iout, status], **kwargs)
         return None
 
     def status_input(self, **kwargs) -> int:
@@ -3845,11 +3820,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_input set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_input], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3877,10 +3852,9 @@ class PMBus(Use_Ftdi):
                b3_unit_off_low_vin, b2_iin_ocf, b1_iin_ocw, b0_pin_opw)
 
     def clear_status_input(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_input, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_input, status], **kwargs)
         return None
 
     def status_temperature(self, **kwargs) -> int:
@@ -3895,11 +3869,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_temperature set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_temperature], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3927,10 +3901,9 @@ class PMBus(Use_Ftdi):
         return(b7_otf, b6_otw, b5_utw, b4_utf, b3_res, b2_res, b1_res, b0_res)
 
     def clear_status_temperature(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_temperature, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_temperature, status], **kwargs)
         return None
 
     def status_cml(self, **kwargs) -> int:
@@ -3945,11 +3918,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_cml set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_cml], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -3978,10 +3951,9 @@ class PMBus(Use_Ftdi):
                b1_other_comm_fault, b0_other_mem_logic_fault)
 
     def clear_status_cml(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_cml, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_cml, status], **kwargs)
         return None
 
     def status_other(self, **kwargs) -> int:
@@ -3996,11 +3968,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_other set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_other], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4028,10 +4000,9 @@ class PMBus(Use_Ftdi):
                b0_first_to_smbalert)
 
     def clear_status_other(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_other, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_other, status], **kwargs)
         return None
 
     def status_mfr_specific(self, **kwargs) -> int:
@@ -4046,11 +4017,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_mfr_specific set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_mfr_specific], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4076,10 +4047,9 @@ class PMBus(Use_Ftdi):
         return(b7, b6, b5, b4, b3, b2, b1, b0)
 
     def clear_status_mfr_specific(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_mfr_specific, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_mfr_specific, status], **kwargs)
         return None
 
     def status_fans_1_2(self, **kwargs) -> int:
@@ -4094,11 +4064,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_fans_1_2 set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_fans_1_2], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4126,10 +4096,9 @@ class PMBus(Use_Ftdi):
                b2_fan2_so, b1_airflow_f, b0_airflow_w)
 
     def clear_status_fans_1_2(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_fans_1_2, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_fans_1_2, status], **kwargs)
         return None
 
     def status_fans_3_4(self, **kwargs) -> int:
@@ -4144,11 +4113,11 @@ class PMBus(Use_Ftdi):
         Returns:
             int: status_fans_3_4 set in slave, unsigned, 1 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
 
         response = self.query_slave([self.commands.status_fans_3_4], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4175,10 +4144,9 @@ class PMBus(Use_Ftdi):
                b2_fan4_so, b1_res, b0_res)
 
     def clear_status_fans_3_4(self, status: int, **kwargs) -> None:
-        relax = kwargs.get('relax', True)
-        start = kwargs.get('start', True)
-        self.write_slave([self.commands.status_fans_3_4, status],
-                         relax=relax, start=start)
+        kwargs['relax'] = kwargs.get('relax', True)
+        kwargs['start'] = kwargs.get('start', True)
+        self.write_slave([self.commands.status_fans_3_4, status], **kwargs)
         return None
 
     def read_kwh_in(self, **kwargs):
@@ -4194,10 +4162,10 @@ class PMBus(Use_Ftdi):
             int: read_kwh_in set in slave, unsigned, 4 byte
             note, the data could be ieee-754 floating point
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_kwh_in], 4,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -4214,10 +4182,10 @@ class PMBus(Use_Ftdi):
             int: read_kwh_out set in slave, unsigned, 4 byte
             note, the data could be ieee-754 floating point
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_kwh_out], 4,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         return response
 
@@ -4255,19 +4223,20 @@ class PMBus(Use_Ftdi):
             response (int): the read_kwh_config, 2 bytes, unsigned
 
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         dowrite = reset_acc_in | reset_acc_out
 
         if dowrite:
+            kwargs['relax'] = True  # special case
             assembly = (reset_acc_in << 8) | (reset_acc_out)
             abytes = assembly.to_bytes(2, byteorder='big', signed=False)
             self.write_slave([self.commands.read_kwh_config, abytes],
-                             relax=True, start=start)
+                             **kwargs)
             return None
         else:
             response = self.query_slave([self.commands.read_kwh_config],
-                                        2, relax=relax, start=start)
+                                        2, **kwargs)
             response = int.from_bytes(response, byteorder='little',
                                       signed=False)
 
@@ -4287,10 +4256,10 @@ class PMBus(Use_Ftdi):
             rollover (int): unsigned 1 byte
             sample_count (int): unsigned 3 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_ein], 7,
-                                    relax=relax, start=start)
+                                    **kwargs)
         energy_count = int.from_bytes(response[1:3], byteorder='little',
                                       signed=False)
         rollover = int.from_bytes(response[3:4], byteorder='little',
@@ -4314,10 +4283,10 @@ class PMBus(Use_Ftdi):
             rollover (int): unsigned 1 byte
             sample_count (int): unsigned 3 byte
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_eout], 7,
-                                    relax=relax, start=start)
+                                    **kwargs)
         energy_count = int.from_bytes(response[1:3], byteorder='little',
                                       signed=False)
         rollover = int.from_bytes(response[3:4], byteorder='little',
@@ -4341,10 +4310,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_vin = instance.decode_lin11(read_vin)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_vin], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4363,10 +4332,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_iin = instance.decode_lin11(read_iin)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_iin], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4385,10 +4354,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_vcap = instance.decode_lin11(read_vcap)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_vcap], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4407,10 +4376,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_vout = instance.decode_lin11(read_vout)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_vout], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4429,10 +4398,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_iout = instance.decode_lin11(read_iout)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_iout], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4451,10 +4420,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_temperature_1 = instance.decode_lin11(read_temperature_1)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_temperature_1], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4473,10 +4442,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_temperature_2 = instance.decode_lin11(read_temperature_2)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_temperature_2], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4495,10 +4464,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_temperature_3 = instance.decode_lin11(read_temperature_3)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_temperature_3], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4517,10 +4486,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_fan_speed_1 = instance.decode_lin11(read_fan_speed_1)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_fan_speed_1], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4539,10 +4508,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_fan_speed_2 = instance.decode_lin11(read_fan_speed_2)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_fan_speed_2], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4561,10 +4530,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_fan_speed_3 = instance.decode_lin11(read_fan_speed_3)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_fan_speed_3], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4583,10 +4552,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_fan_speed_4 = instance.decode_lin11(read_fan_speed_4)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_fan_speed_4], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4605,10 +4574,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_duty_cycle = instance.decode_lin11(read_duty_cycle)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_duty_cycle], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4627,10 +4596,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_frequency = instance.decode_lin11(read_frequency)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_frequency], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4649,10 +4618,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_pout = instance.decode_lin11(read_pout)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_pout], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4671,10 +4640,10 @@ class PMBus(Use_Ftdi):
             Note, use another function to decode the returned value
             i.e. read_pin = instance.decode_lin11(read_pin)
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.read_pin], 2,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
 
         return response
@@ -4692,10 +4661,10 @@ class PMBus(Use_Ftdi):
             int: pmbus_revision set in slave, unsigned, 1 bytes
 
         """
-        relax = kwargs.get('relax', False)
-        start = kwargs.get('start', True)
+        kwargs['relax'] = kwargs.get('relax', False)
+        kwargs['start'] = kwargs.get('start', True)
         response = self.query_slave([self.commands.pmbus_revision], 1,
-                                    relax=relax, start=start)
+                                    **kwargs)
         response = int.from_bytes(response, byteorder='little', signed=False)
         if verbose:
             version = 1 + response/10
@@ -4708,7 +4677,6 @@ if __name__ == '__main__':
     # import it this is skipped
     pmbus_addr = 0x4C
     ftdi_dongle = 'ftdi://ftdi:232h:FT0NCMMI/1'
-    dopmbus = PMBus(pmbus_addr, ftdi_dongle, frequency=25000)  # the CTO clock
-    # stretching is problematic at faster than 25kHz reee!
+    dopmbus = PMBus(pmbus_addr, ftdi_dongle, frequency=25000)
     # i2c.configure('ftdi://ftdi:232h:FT0NCMMI/1') # (C232HM-EDHSL-0) 5V
     # i2c.configure('ftdi://ftdi:232h:FT0J75U1/1') # (C232HM-DDHSL-0) 3.3V
