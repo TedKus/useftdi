@@ -133,3 +133,6 @@ dmypy.json
 
 # Pycharm files
 .idea
+
+# zadig
+zadig_utility/
