@@ -30,7 +30,7 @@ class Use_Ftdi():
                 which determines how the instance will connect with the FTDI
                 dongle. Can be an FTDI url (str) of a connected dongle, an
                 existing I2cController instance, or another Use_Ftdi instance
-                in which case it will use the it's existing I2cController
+                in which case it will use the existing I2cController
                 instance. If set to None the __init__ method will attempt to
                 discover connected dongles, connecting to the first dongle
                 found. Defaults to None.
@@ -59,6 +59,7 @@ class Use_Ftdi():
             if isinstance(ftdi.ftdi_url, str):  # if an instance it has a URL!
                 self.ftdi_url = ftdi.ftdi_url
             else:
+                # the following case is for legacy support backwards compatible
                 # this next url code assumes its the first dongle found. this
                 # should be a valid assumption, because an instance was passed
                 # so the only url is probably that of the passed instance
@@ -68,7 +69,7 @@ class Use_Ftdi():
                 self.ftdi_url = 'ftdi://{}:{}:{}/{}'.format(idn.vid, idn.pid,
                                                             idn.sn,
                                                             idn.address)
-
+            self.is_master = False  # we're not the dongle!
         else:  # make a new connection
             self.i2c_master = I2cController()
 
@@ -81,6 +82,7 @@ class Use_Ftdi():
                                   'unable to connect')
             else:
                 self.ftdi_url = ftdi  # this only runs when a URL is passed in
+            self.is_master = True  # we are the dongle!
 
         if kwargs:
             self.i2c_master.configure(self.ftdi_url, **kwargs)
@@ -93,16 +95,14 @@ class Use_Ftdi():
                 self.i2c_master.configure(self.ftdi_url)
                 self.options = {}  # if it gets here the options are defaults
 
-        try:
-            self.devices = ftdi.devices
-        except AttributeError:
-            self.devices = {}  # keep a list of devices interacted with
+        if self.is_master:
+            for i in range(0, 128):  # open all 7-bit ports available
+                self.i2c_master.get_port(i)
+            self.devices = {}
 
-        if pmbus_addr is not None:  # no need to if this is the instance
-            # of the master....
-            self.i2c_slave = self.i2c_master.get_port(pmbus_addr)
-            self.devices[pmbus_addr] = self.i2c_slave
-            # could consider just going to get all addresses now.. why not?
+        if pmbus_addr is not None:  # address requested
+            self.set_address(pmbus_addr)
+
         if kwargs.get('use_wide_port', False):
             self.gpio_width = self.gpio().width
         else:
@@ -114,13 +114,18 @@ class Use_Ftdi():
         self.ara_command = self.i2c_master.get_port(0x0C)  # this is a special
         # ara_command is the Alert Response Address
         self.general_call = self.i2c_master.get_port(0x00)  # this is a special
-        # general_call is the General Call Address, used for bus reset
+        # general_call is the i2c master address for bus reset and broadcast
 
         return None
 
-    def __del__(self, **kwargs) -> None:
-        if hasattr(self, 'i2c_master'):
-            self.i2c_master.terminate(**kwargs)
+    def __del__(self, **kwargs):
+        if self.is_master:  # attempt to make this more delicate
+            if hasattr(self, 'i2c_master'):
+                self.i2c_master.close(**kwargs)
+                # some suspicion that this may run when instances of i2c
+                # addresses are finshed being used
+                # if that is the case, we should make this more delicate
+
         return None
 
     def __repr__(self) -> str:
@@ -147,9 +152,18 @@ class Use_Ftdi():
         except AttributeError:
             return None
 
-    def set_address(self, address: int) -> None:
-        self.i2c_slave = self.i2c_master.get_port(address)
-        self.devices[address] = self.i2c_slave
+    def set_address(self, address: int):
+        self.pmbus_addr = address
+        self.i2c_slave = self.i2c_master._slaves[address]
+        self.update_device_list(address)
+        return None
+
+    def update_device_list(self, address) -> None:
+        try:
+            self.devices[address] = self.i2c_slave
+        except AttributeError:
+            self.devices = {}
+            self.devices[address] = self.i2c_slave
         return None
 
     @property
@@ -158,7 +172,6 @@ class Use_Ftdi():
 
     @retry_count.setter
     def retry_count(self, count):
-
         if not isinstance(count, int):
             raise ValueError('Retry count must be of type int')
 
@@ -286,13 +299,12 @@ class Use_Ftdi():
 
     def read_slave(self, n_bytes: int, **kwargs) -> bytearray:
         """
-        write_slave(payload)
+        read_slave(n_bytes)
 
         reads the data from the i2c slave device at "self.pmbus_addr".
 
         Args:
-            payload (none): Command to send to the
-            i2c device.
+            n_bytes (int): number of data bytes to read from the i2c device
         Kwargs:
             relax (bool): True = Finish transaction with i2c stop and release
                           bus, Default is False.
@@ -364,6 +376,8 @@ class Use_Ftdi():
             try:
                 self.i2c_master.read(addr, 0, relax=(i == N - 1))
                 i2c_devices.append(addr)
+                if addr not in self.devices:
+                    self.devices[addr] = self.i2c_master._slaves[addr]
                 if verbose:
                     print(f'found address: {hex(addr)}')
 
@@ -386,7 +400,8 @@ class Use_Ftdi():
                     try:  # because it failed, lets try this position again
                         self.i2c_master.read(addr, 0, relax=(i == N - 1))
                         i2c_devices.append(addr)
-                        self.devices[addr] = self.i2c_master.get_port(addr)
+                        if addr not in self.devices:
+                            self.devices[addr] = self.i2c_master._slaves[addr]
                         if verbose:
                             print(f'found retry address: {hex(addr)}')
                     except I2cNackError:  # no response from address
@@ -1032,7 +1047,14 @@ def get_available_ftdi_urls():
 
     io_buffer = StringIO()
     with redirect_stdout(io_buffer):
-        Ftdi.show_devices()  # normally prints to stdout and returns None
+        try:
+            Ftdi.show_devices()  # normally prints to stdout and returns None
+        except ValueError:
+            print('No backend available, did you install libusb driver?\n'
+                  'This library requires that the driver your OS associates\n'
+                  'with FTDI device by default should be overriden to use\n'
+                  'the "libusb-win32" driver. See README.txt')
+            raise ValueError('No backend available')
     response = io_buffer.getvalue()
 
     # parse out list of connected devices
