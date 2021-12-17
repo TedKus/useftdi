@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='useftdi',
-      version='0.6.16',
+      version='0.7.17',
       description="""
                   A library of software drivers to interface with various
                   I2C IC's utilizing FTDI I2C dongles.
