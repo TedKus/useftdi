@@ -1126,6 +1126,36 @@ class PMBus(Use_Ftdi):
         self.set_vout_command(vout)
         return None
 
+    def get_vout(self, **kwargs) -> float:
+        return self.decode_ulin16(self.get_vout_command(**kwargs))
+
+    def set_vout(self, vout: float, **kwargs) -> None:
+        vout_ulin16 = self.encode_ulin16(vout, self.vout_mode_exponent)
+        self.set_vout_command(vout_ulin16, **kwargs)
+        return None
+
+    @property
+    def vout(self) -> float:
+        """
+        vout
+
+        reads back and decodes the ulinear16 vout_command currently set in
+        the target device
+        if vout in si units is provided will set the vout
+
+        Args:
+            vout (float): if provided will set the vout
+
+        Returns:
+            float: vout_command voltage set in slave
+        """
+        return self.get_vout()
+
+    @vout.setter
+    def vout(self, vout: float) -> None:
+        self.set_vout(vout)
+        return None
+
     def get_vout_trim(self, **kwargs) -> int:
         return self.get_pmbus_two(self.commands.vout_trim,
                                   byteorder='little', signed=True, **kwargs)
