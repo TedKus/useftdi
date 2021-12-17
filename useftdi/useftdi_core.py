@@ -205,7 +205,7 @@ class Use_Ftdi():
 
         start = kwargs.get('start', True)
         relax = kwargs.get('relax', False)
-
+        wakeup = kwargs.get('wakeup', False)
         # check payload is valid
         if not isinstance(payload, (list, tuple, bytes, bytearray)):
             warnings.warn(f"Warning, payload={payload} is wrong type, "
@@ -220,6 +220,8 @@ class Use_Ftdi():
                                  ' or type int')
 
         try:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
             response = self.i2c_slave.exchange(payload, n_bytes,
                                                start=start, relax=relax)
 
@@ -264,7 +266,7 @@ class Use_Ftdi():
 
         start = kwargs.get('start', True)
         relax = kwargs.get('relax', False)
-
+        wakeup = kwargs.get('wakeup', False)
         # check payload is valid
         if not isinstance(payload, (list, tuple, bytes, bytearray)):
             warnings.warn(f"Warning, payload={payload} is wrong type, "
@@ -279,6 +281,8 @@ class Use_Ftdi():
                                  ' or type int')
 
         try:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
             self.i2c_slave.write(payload, start=start, relax=relax)
 
         # the dongle timed out, which can be for a lot of reasons
@@ -321,8 +325,10 @@ class Use_Ftdi():
 
         start = kwargs.get('start', True)
         relax = kwargs.get('relax', False)
-
+        wakeup = kwargs.get('wakeup', False)
         try:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
             response = self.i2c_slave.read(n_bytes, relax=relax, start=start)
 
         # the dongle timed out, which can be for a lot of reasons
@@ -425,7 +431,7 @@ class Use_Ftdi():
         self.retry_count = initial_retry_count  # revert
         return i2c_devices
 
-    def reset_i2c_devices(self) -> None:
+    def reset_i2c_devices(self, **kwargs):
         """
         reset_i2c_devices()
 
@@ -438,11 +444,15 @@ class Use_Ftdi():
         """
 
         # self.i2c_master.write(0x00, 0x06)
+        start = kwargs.get('start', True)
+        relax = kwargs.get('relax', True)
+        wakeup = kwargs.get('wakeup', True)
         try:
-            self.general_call.write(0x06)
-        except I2cNackError:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
+            self.general_call.write(0x06, relax=relax, start=start)
+        except (I2cNackError, I2cIOError):
             print('NACK from Bus on General Call (0x00), SDA stuck high?')
-
         return None
 
     def ara_query(self, **kwargs) -> bytearray:
@@ -464,8 +474,10 @@ class Use_Ftdi():
         """
         start = kwargs.get('start', True)
         relax = kwargs.get('relax', False)
-
+        wakeup = kwargs.get('wakeup', False)
         try:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
             response = self.ara_command.read(1, start=start, relax=relax)
         # the dongle timed out, which can be for a lot of reasons
         except I2cNackError:
@@ -483,6 +495,42 @@ class Use_Ftdi():
             else:
                 raise I2cIOError
         return response
+
+    def start_byte(self, **kwargs) -> bytearray:
+        """
+        start_byte()
+
+        Sends a
+
+        Returns:
+            None
+        """
+        initial_retry_count = self.retry_count
+        self.retry_count = 1  # don't need retrys finding
+
+        start = kwargs.get('start', True)
+        relax = kwargs.get('relax', False)
+        wakeup = kwargs.get('wakeup', True)
+        try:
+            if wakeup:
+                self.i2c_master.ftdi.read_data_bytes(1, 4)
+            self.general_call.read(0, start=start, relax=relax)
+        except I2cNackError:
+            return  # this is the expected condition
+        except I2cIOError:
+            if kwargs.get('verbose', False):
+                print('I2cIOError, FTDI controller was not initialized, '
+                      'fixing...')
+            self.i2c_master.flush()  # flush HW FIFOs
+
+            # Option to try again after failure
+            if kwargs.get('retry_on_error', True):
+                kwargs['retry_on_error'] = False
+                self.start_byte(**kwargs)
+            else:
+                raise I2cIOError
+        self.retry_count = initial_retry_count  # revert
+        return
 
     def gpio(self):
         """
